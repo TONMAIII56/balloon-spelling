@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>บอลลูนสะกดคำ ป.1 — เกมการศึกษาวิชาภาษาอังกฤษ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@600;700&family=Noto+Sans+Thai+Looped:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --pad: max(10px, 3vw);
+      --ink: #4A3A28;
+      --cream: #FFF8ED;
+      --orange: #FF9F1C;
+      --orange-deep: #DD7F00;
+      --purple: #7C5CFC;
+      --sky: #EAFAFF;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--sky);
+      font-family: 'Mali', 'Noto Sans Thai Looped', sans-serif;
+      color: var(--ink);
+    }
+
+    #gameCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    /* HUD */
+    #hud {
+      position: fixed;
+      top: var(--pad);
+      left: var(--pad);
+      right: var(--pad);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .hud-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      max-width: 100%;
+      pointer-events: auto;
+    }
+
+    .hud-chip {
+      min-width: 0;
+      max-width: 58vw;
+      min-height: 38px;
+      max-height: 52px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 3px solid #FFFFFF;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(74, 58, 40, 0.12);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: clamp(12px, 3.4vw, 17px);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    #heartsChip {
+      gap: 3px;
+      padding: 6px 11px;
+    }
+
+    .heart-icon {
+      font-size: clamp(14px, 3.6vw, 19px);
+      line-height: 1;
+      color: #FF6B6B;
+      transition: opacity 0.25s ease, filter 0.25s ease, transform 0.25s ease;
+    }
+
+    .heart-icon.lost {
+      color: #B8B2AA;
+      opacity: 0.42;
+      filter: grayscale(1);
+      transform: scale(0.86);
+    }
+
+    input, textarea, select {
+      user-select: text;
+      -webkit-user-select: text;
+      font-family: inherit;
+    }
+
+    #helpBtn, #settingsBtn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
+      max-width: 40px;
+      max-height: 40px;
+      border-radius: 999px;
+      border: 3px solid #FFFFFF;
+      background: #4CC9F0;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(76, 201, 240, 0.35);
+      transition: transform 0.15s ease;
+    }
+
+    #settingsBtn {
+      background: #7C5CFC;
+      box-shadow: 0 4px 12px rgba(124, 92, 252, 0.35);
+      font-size: 19px;
+    }
+
+    #helpBtn:active, #settingsBtn:active {
+      transform: scale(0.94);
+    }
+
+    #helpBtn:focus-visible, #settingsBtn:focus-visible, .chip-btn:focus-visible,
+    .primary-btn:focus-visible, .ghost-btn:focus-visible, .mini-btn:focus-visible {
+      outline: 3px solid #7C5CFC;
+      outline-offset: 2px;
+    }
+
+    /* Category chips on start screen */
+    .cat-section {
+      margin: 0 0 14px;
+    }
+
+    .cat-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6B6480;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .cat-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .chip-btn {
+      border: 3px solid #FFC36B;
+      background: #FFF8ED;
+      color: #4A3A28;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .chip-btn .chip-count {
+      font-size: 12px;
+      color: #9A8466;
+      margin-left: 4px;
+    }
+
+    .chip-btn.active {
+      background: #FF9F1C;
+      border-color: #DD7F00;
+      color: #FFFFFF;
+    }
+
+    .chip-btn.active .chip-count {
+      color: #FFF1DA;
+    }
+
+    .pick-box {
+      margin-top: 12px;
+      background: #F3FBF9;
+      border: 2px solid #CDEFE9;
+      border-radius: 18px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pick-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0E7C70;
+    }
+
+    .pick-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 196px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+
+    .pick-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 2px solid #2EC4B6;
+      background: #D9F5EF;
+      color: #0E5E55;
+      border-radius: 12px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .pick-chip .tick {
+      font-size: 12px;
+      width: 14px;
+      text-align: center;
+    }
+
+    .pick-chip[aria-pressed="false"] {
+      border-color: #E3DCCD;
+      background: #FFFFFF;
+      color: #A89F8D;
+    }
+
+    .pick-chip:focus-visible {
+      outline: 3px solid #7C5CFC;
+      outline-offset: 2px;
+    }
+
+    .pick-note {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #5F8F88;
+      line-height: 1.5;
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .ghost-btn {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: 3px solid #E4DAF9;
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #5B3FD9;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .ghost-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Settings modal */
+    #settingsModal {
+      z-index: 80;
+    }
+
+    #settingsModal .modal-card {
+      width: min(94vw, 34rem);
+      padding: 20px;
+    }
+
+    .set-section {
+      background: #FFF8ED;
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .set-heading {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #2B2440;
+    }
+
+    .set-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .set-row > * {
+      min-width: 0;
+    }
+
+    .field {
+      height: 40px;
+      border: 2px solid #E6DCC8;
+      border-radius: 12px;
+      background: #FFFFFF;
+      color: #2B2440;
+      padding: 0 10px;
+      font-size: 15px;
+      font-weight: 600;
+      min-width: 0;
+    }
+
+    .field:focus {
+      outline: none;
+      border-color: #7C5CFC;
+    }
+
+    .field.invalid {
+      border-color: #FF6B6B;
+      background: #FFF1F1;
+    }
+
+    #catSelect {
+      flex: 1 1 160px;
+    }
+
+    #catName {
+      flex: 1 1 100%;
+    }
+
+    .mini-btn {
+      height: 40px;
+      padding: 0 12px;
+      border: 2px solid #E6DCC8;
+      border-radius: 12px;
+      background: #FFFFFF;
+      color: #4A3A28;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .mini-btn.danger {
+      color: #D64545;
+    }
+
+    .mini-btn.confirming {
+      background: #FF6B6B;
+      border-color: #FF6B6B;
+      color: #FFFFFF;
+    }
+
+    .word-head, .word-row {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.15fr) 40px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .word-head {
+      font-size: 12px;
+      font-weight: 700;
+      color: #8A7A62;
+      padding: 0 2px;
+    }
+
+    .word-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .word-row .field {
+      width: 100%;
+      padding: 0 8px;
+    }
+
+    .word-row .w-emoji {
+      text-align: center;
+      padding: 0 2px;
+      font-size: 18px;
+    }
+
+    .word-row .mini-btn {
+      width: 40px;
+      padding: 0;
+    }
+
+    .set-hint {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #8A7A62;
+      line-height: 1.5;
+    }
+
+    #bulkText {
+      width: 100%;
+      min-height: 90px;
+      border: 2px solid #E6DCC8;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      resize: vertical;
+      color: #2B2440;
+      background: #FFFFFF;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      color: #5B3FD9;
+    }
+
+    .opt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .opt-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4A3A28;
+    }
+
+    .check-label {
+      flex-direction: row !important;
+      align-items: center;
+      gap: 8px !important;
+      min-height: 40px;
+    }
+
+    .check-label input {
+      width: 20px;
+      height: 20px;
+      accent-color: #7C5CFC;
+    }
+
+    #settingsError {
+      margin: 0 0 10px;
+      color: #D64545;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    #saveNote {
+      margin: 8px 0 0;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #6B6480;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .link-btn {
+      border: none;
+      background: none;
+      color: #5B3FD9;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 12.5px;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 2px;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .settings-actions .primary-btn {
+      flex: 2 1 180px;
+      width: auto;
+    }
+
+    .settings-actions .ghost-btn {
+      flex: 1 1 110px;
+      width: auto;
+      margin-top: 0;
+      min-height: 56px;
+    }
+
+    /* Prompt Card */
+    #promptCard {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 64px;
+      width: min(86vw, 460px);
+      min-height: 56px;
+      max-height: 120px;
+      padding: 8px 14px;
+      background: rgba(255, 248, 237, 0.88);
+      border: 3px solid rgba(255, 159, 28, 0.6);
+      border-radius: 22px;
+      box-shadow: 0 6px 18px rgba(74, 58, 40, 0.1);
+      z-index: 15;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .prompt-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+      justify-content: flex-start;
+    }
+
+    .prompt-main.sight-mode {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+      text-align: center;
+    }
+
+    #promptEmoji {
+      font-size: clamp(32px, 8vw, 54px);
+      max-width: 76px;
+      line-height: 1.15;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .prompt-main.sight-mode #promptEmoji {
+      font-size: clamp(20px, 4.8vw, 28px);
+      max-width: 76px;
+      line-height: 1.1;
+    }
+
+    #promptThai {
+      font-weight: 700;
+      font-size: clamp(18px, 5vw, 32px);
+      line-height: 1.35;
+      color: var(--ink);
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .prompt-main.sight-mode #promptThai {
+      font-size: clamp(22px, 6vw, 40px);
+      line-height: 1.25;
+    }
+
+    #promptBadge {
+      align-self: flex-start;
+      flex-shrink: 0;
+      min-width: 0;
+      max-width: 44%;
+      font-size: clamp(11px, 2.8vw, 14px);
+      font-weight: 700;
+      line-height: 1.4;
+      color: #6B5338;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 2px 9px;
+      border-radius: 999px;
+      overflow-wrap: anywhere;
+    }
+
+    /* Wrong Toast under Prompt Card */
+    #wrongToast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      top: 192px;
+      z-index: 22;
+      pointer-events: none;
+      background: #FFF8ED;
+      border: 2px solid #FF6B6B;
+      color: #FF6B6B;
+      font-weight: 700;
+      font-size: clamp(13px, 3.6vw, 16px);
+      line-height: 1.5;
+      padding: 4px 14px;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+      opacity: 0;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      max-width: min(90vw, 420px);
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-align: center;
+    }
+
+    #wrongToast.show {
+      opacity: 1;
+    }
+
+    /* Modals: HOWTO & END */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 36, 64, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    #howto {
+      z-index: 70;
+    }
+
+    #endModal {
+      z-index: 50;
+    }
+
+    .modal-card {
+      margin: auto;
+      width: min(92vw, 28rem);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #FFFFFF;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 18px 42px rgba(43, 36, 64, 0.25);
+      color: #2B2440;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .modal-title {
+      margin: 0 0 6px;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #2B2440;
+      text-align: center;
+    }
+
+    .modal-goal {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #DD7F00;
+      text-align: center;
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #FFF8ED;
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: #2B2440;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .step-emoji {
+      font-size: 19px;
+      line-height: 1.3;
+      flex-shrink: 0;
+    }
+
+    .modal-tip {
+      margin: 0 0 16px;
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: #6B6480;
+      text-align: center;
+    }
+
+    .primary-btn {
+      width: 100%;
+      min-height: 56px;
+      padding: 12px 18px;
+      border: none;
+      border-bottom: 4px solid #DD7F00;
+      border-radius: 999px;
+      background: #FF9F1C;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.4;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(255, 159, 28, 0.35);
+      transition: transform 0.12s ease, filter 0.12s ease;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .primary-btn:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .stars-display {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      font-size: 46px;
+      line-height: 1.2;
+      margin: 4px 0 10px;
+    }
+
+    .star-earned {
+      color: #FFD23F;
+      text-shadow: 0 3px 0 #E5A900, 0 6px 14px rgba(255, 210, 63, 0.45);
+    }
+
+    .star-empty {
+      color: #E5DCCB;
+    }
+
+    .end-heading {
+      margin: 0 0 6px;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #2B2440;
+      text-align: center;
+    }
+
+    .end-score {
+      margin: 0 0 18px;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #DD7F00;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hud">
+    <div class="hud-group">
+      <div class="hud-chip" id="wordCounterChip">คำที่ 1/3</div>
+    </div>
+    <div class="hud-group">
+      <div class="hud-chip" id="heartsChip" aria-label="ลมในบอลลูน"></div>
+      <button id="settingsBtn" type="button" aria-label="ตั้งค่าและแก้ไขคำศัพท์">⚙️</button>
+      <button id="helpBtn" type="button" aria-label="วิธีเล่น">?</button>
+    </div>
+  </div>
+
+  <div id="promptCard">
+    <div class="prompt-main" id="promptMain">
+      <div id="promptEmoji">🐱</div>
+      <div id="promptThai">แมว</div>
+    </div>
+    <div id="promptBadge">ด่าน 1 · ⭐ 0</div>
+  </div>
+
+  <div id="wrongToast">อุ๊ย! ลมรั่วนิดเดียว</div>
+
+  <!-- How to Play Modal -->
+  <div id="howto" class="modal-backdrop open" role="dialog" aria-modal="true" aria-labelledby="howtoTitle">
+    <div class="modal-card" id="howtoCard">
+      <h2 class="modal-title" id="howtoTitle">วิธีเล่น</h2>
+      <p class="modal-goal">เป้าหมาย: ฝึกสะกดคำศัพท์ภาษาอังกฤษ ป.1 และเป่าบอลลูนพาจัมโบ้ลอยขึ้นฟ้า</p>
+      <div class="cat-section" id="catSection">
+        <p class="cat-label">เลือกหมวดคำศัพท์</p>
+        <div class="cat-chips" id="catChips"></div>
+        <div class="pick-box" id="pickBox">
+          <div class="pick-head">
+            <span id="pickTitle">เลือกคำที่จะเล่น</span>
+            <span>
+              <button id="pickAllBtn" class="link-btn" type="button">เลือกทั้งหมด</button>
+              <button id="pickNoneBtn" class="link-btn" type="button">ไม่เลือกเลย</button>
+            </span>
+          </div>
+          <div class="pick-grid" id="pickGrid" role="group" aria-label="คำที่จะใช้ในเกม"></div>
+          <p class="pick-note" id="pickNote"></p>
+        </div>
+      </div>
+      <button id="startBtn" class="primary-btn" type="button">เริ่มเล่น! 🚀</button>
+      <button id="openSettingsFromStart" class="ghost-btn" type="button">⚙️ แก้ไขคำศัพท์ / ตั้งค่า</button>
+      <div style="height:14px"></div>
+      <div class="step-list">
+        <div class="step-row">
+          <span class="step-emoji">🎯</span>
+          <span>ทายตัวอักษรทีละตัวเติมให้เต็มคำ แล้วเป่าบอลลูนของจัมโบ้ให้ลอยขึ้นฟ้า!</span>
+        </div>
+        <div class="step-row">
+          <span class="step-emoji">🖼️</span>
+          <span>ดูรูปภาพและคำแปลไทย แล้วคิดว่าคำนี้สะกดด้วยตัวอะไรบ้าง</span>
+        </div>
+        <div class="step-row">
+          <span class="step-emoji">🔤</span>
+          <span>แตะเลือกตัวอักษรจากถัง (หรือกดลูกศรเลื่อนแล้วกดเลือก) — ถ้าตัวนั้นอยู่ในคำ จัมโบ้จะเป่าลมเข้าบอลลูนและเติมให้ทุกช่องที่ตรง</span>
+        </div>
+        <div class="step-row">
+          <span class="step-emoji">🎈</span>
+          <span>เติมครบทุกช่อง บอลลูนก็จะพาจัมโบ้ลอยขึ้นฟ้า!</span>
+        </div>
+        <div class="step-row">
+          <span class="step-emoji">💡</span>
+          <span>ทายผิดไม่เป็นไร ลมแค่รั่วออกนิดเดียว เลือกใหม่ได้เสมอ — ตัวที่ไม่มีในคำจะจางลงให้เห็นเอง</span>
+        </div>
+      </div>
+      <p class="modal-tip">เคล็ดลับ: ค่อย ๆ ดูคำแปลและรูปใบ้ แล้วเลือกตัวอักษรที่มั่นใจได้เลย ไม่มีจับเวลา</p>
+      <button id="resumeBtn" class="primary-btn" type="button" style="display: none;">เข้าใจแล้ว! 👍</button>
+    </div>
+  </div>
+
+  <!-- End Modal -->
+  <div id="endModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <div class="modal-card">
+      <div class="stars-display" id="endStars">
+        <span>⭐</span><span>⭐</span><span>⭐</span>
+      </div>
+      <h2 class="end-heading" id="endTitle">เก่งมาก! 🎈</h2>
+      <p class="end-score" id="endScore">คะแนน 0</p>
+      <button id="replayBtn" class="primary-btn" type="button">เล่นอีกครั้ง 🔄</button>
+      <button id="changeCatBtn" class="ghost-btn" type="button">เลือกหมวดคำอื่น 📚</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-card">
+      <h2 class="modal-title" id="settingsTitle">ตั้งค่าและคำศัพท์</h2>
+
+      <div class="set-section">
+        <h3 class="set-heading">หมวดคำศัพท์</h3>
+        <div class="set-row">
+          <select id="catSelect" class="field" aria-label="เลือกหมวดที่จะแก้ไข"></select>
+          <button id="addCatBtn" class="mini-btn" type="button">+ หมวดใหม่</button>
+          <button id="delCatBtn" class="mini-btn danger" type="button">ลบหมวด</button>
+        </div>
+        <div class="set-row">
+          <input id="catName" class="field" type="text" maxlength="40" placeholder="ชื่อหมวด เช่น สัตว์ (Animals)" aria-label="ชื่อหมวด" />
+        </div>
+      </div>
+
+      <div class="set-section">
+        <h3 class="set-heading">คำในหมวดนี้ <span id="wordCount" style="color:#8A7A62;font-size:13px;"></span></h3>
+        <div class="word-head" aria-hidden="true">
+          <span>รูป</span><span>อังกฤษ</span><span>คำแปล</span><span></span>
+        </div>
+        <div class="word-list" id="wordList"></div>
+        <button id="addWordBtn" class="mini-btn" type="button">+ เพิ่มคำ</button>
+        <p class="set-hint">ใช้ได้เฉพาะตัวอักษร A-Z และเว้นวรรค (เช่น pencil case) คำยาวสุด 3 คำ ตัวพิมพ์เล็ก/ใหญ่ไม่มีผล</p>
+        <details>
+          <summary>วางหลายคำทีเดียว</summary>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+            <textarea id="bulkText" placeholder="บรรทัดละคำ: อังกฤษ, คำแปล, รูป&#10;pen, ปากกา, 🖊️&#10;ruler, ไม้บรรทัด, 📏"></textarea>
+            <button id="bulkAddBtn" class="mini-btn" type="button">เพิ่มคำจากรายการ</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="set-section">
+        <h3 class="set-heading">การเล่น</h3>
+        <div class="opt-grid">
+          <label>หัวใจต่อคำ
+            <select id="setHearts" class="field">
+              <option value="3">3 ดวง</option>
+              <option value="4">4 ดวง</option>
+              <option value="5">5 ดวง</option>
+            </select>
+          </label>
+          <label>คำต่อด่าน
+            <select id="setPerLevel" class="field">
+              <option value="3">3 คำ</option>
+              <option value="4">4 คำ</option>
+              <option value="5">5 คำ</option>
+              <option value="6">6 คำ</option>
+              <option value="8">8 คำ</option>
+              <option value="10">10 คำ</option>
+            </select>
+          </label>
+          <label>ความยาก (ตัวหลอกในถัง)
+            <select id="setDifficulty" class="field">
+              <option value="easy">ง่าย</option>
+              <option value="normal">ปกติ (ยากขึ้นทีละด่าน)</option>
+              <option value="hard">ยาก</option>
+            </select>
+          </label>
+          <label class="check-label">
+            <input id="setShuffle" type="checkbox" />
+            สลับลำดับคำทุกครั้ง
+          </label>
+        </div>
+      </div>
+
+      <p id="settingsError" hidden></p>
+      <div class="settings-actions">
+        <button id="saveSettingsBtn" class="primary-btn" type="button">บันทึก ✅</button>
+        <button id="cancelSettingsBtn" class="ghost-btn" type="button">ยกเลิก</button>
+      </div>
+      <p id="saveNote"></p>
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:4px;">
+        <button id="useSharedBtn" class="link-btn" type="button" hidden>กลับไปใช้ชุดคำที่ครูแชร์</button>
+        <button id="resetDefaultsBtn" class="link-btn" type="button">คืนค่าเริ่มต้นทั้งหมด</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ==========================================
+      // 1. CURRICULUM DATA (GRADE 1 ENGLISH)
+      // ==========================================
+      const DEFAULT_CATEGORIES = [
+        {
+          id: 'things',
+          name: 'สิ่งของ (Things)',
+          words: [
+            { en: 'pen', th: 'ปากกา', emoji: '🖊️' },
+            { en: 'bag', th: 'กระเป๋า', emoji: '🎒' },
+            { en: 'book', th: 'หนังสือ', emoji: '📖' },
+            { en: 'ruler', th: 'ไม้บรรทัด', emoji: '📏' },
+            { en: 'pencil', th: 'ดินสอ', emoji: '✏️' },
+            { en: 'crayon', th: 'สีเทียน', emoji: '🖍️' },
+            { en: 'eraser', th: 'ยางลบ', emoji: '🧽' },
+            { en: 'pencil case', th: 'กล่องดินสอ', emoji: '👝' },
+            { en: 'pencil sharpener', th: 'กบเหลาดินสอ', emoji: '✏️🌀' }
+          ]
+        },
+        {
+          id: 'p1basic',
+          name: 'ป.1 พื้นฐาน',
+          words: [
+            { en: 'cat', th: 'แมว', emoji: '🐱' },
+            { en: 'dog', th: 'หมา', emoji: '🐶' },
+            { en: 'pig', th: 'หมู', emoji: '🐷' },
+            { en: 'sun', th: 'ดวงอาทิตย์', emoji: '☀️' },
+            { en: 'bus', th: 'รถบัส', emoji: '🚌' },
+            { en: 'hat', th: 'หมวก', emoji: '👒' },
+            { en: 'cup', th: 'ถ้วย', emoji: '🥤' },
+            { en: 'red', th: 'สีแดง', emoji: '🟥' },
+            { en: 'box', th: 'กล่อง', emoji: '📦' },
+            { en: 'bed', th: 'เตียง', emoji: '🛏️' },
+            { en: 'fox', th: 'จิ้งจอก', emoji: '🦊' },
+            { en: 'fish', th: 'ปลา', emoji: '🐟' },
+            { en: 'frog', th: 'กบ', emoji: '🐸' },
+            { en: 'star', th: 'ดาว', emoji: '⭐' },
+            { en: 'milk', th: 'นม', emoji: '🥛' },
+            { en: 'hand', th: 'มือ', emoji: '✋' },
+            { en: 'duck', th: 'เป็ด', emoji: '🦆' },
+            { en: 'see', th: 'มอง', emoji: '👀' },
+            { en: 'run', th: 'วิ่ง', emoji: '🏃' },
+            { en: 'you', th: 'คุณ', emoji: '🫵' },
+            { en: 'and', th: 'และ', emoji: '🤝' },
+            { en: 'go', th: 'ไป', emoji: '🚶' },
+            { en: 'apple', th: 'แอปเปิล', emoji: '🍎' },
+            { en: 'happy', th: 'มีความสุข', emoji: '😀' },
+            { en: 'green', th: 'สีเขียว', emoji: '🟩' },
+            { en: 'house', th: 'บ้าน', emoji: '🏠' },
+            { en: 'water', th: 'น้ำ', emoji: '💧' }
+          ]
+        }
+      ];
+      const DEFAULT_SETTINGS = { hearts: 5, perLevel: 5, difficulty: 'normal', shuffle: false };
+      const LOCAL_CONFIG_KEY = 'balloonSpell.config.v1';
+      const LOCAL_ACTIVE_KEY = 'balloonSpell.active.v1';
+
+      function clone(obj) {
+        return JSON.parse(JSON.stringify(obj));
+      }
+
+      function defaultConfig() {
+        return { categories: clone(DEFAULT_CATEGORIES), settings: clone(DEFAULT_SETTINGS), activeId: 'things' };
+      }
+
+      function cleanEnglish(en) {
+        return String(en || '').trim().replace(/\s+/g, ' ');
+      }
+
+      function isValidEnglish(en) {
+        const t = cleanEnglish(en);
+        if (!/^[A-Za-z]+(?: [A-Za-z]+){0,2}$/.test(t)) return false;
+        const parts = t.split(' ');
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i].length > 12) return false;
+        }
+        return true;
+      }
+
+      function isLetterUnit(u) {
+        return /^[A-Z]$/.test(u);
+      }
+
+      // Shared/stored data is untrusted: keep only well-formed fields.
+      function sanitizeConfig(raw) {
+        if (!raw || typeof raw !== 'object' || !Array.isArray(raw.categories)) return null;
+        const cats = [];
+        for (let i = 0; i < raw.categories.length && cats.length < 30; i++) {
+          const c = raw.categories[i];
+          if (!c || typeof c !== 'object' || !Array.isArray(c.words)) continue;
+          const words = [];
+          for (let j = 0; j < c.words.length && words.length < 80; j++) {
+            const w = c.words[j];
+            if (!w || typeof w !== 'object') continue;
+            const en = cleanEnglish(w.en).toLowerCase();
+            if (!isValidEnglish(en)) continue;
+            const clean = {
+              en: en,
+              th: String(w.th || '').slice(0, 40),
+              emoji: String(w.emoji || '').slice(0, 16)
+            };
+            if (w.off === true) clean.off = true;
+            words.push(clean);
+          }
+          if (!words.length) continue;
+          cats.push({
+            id: String(c.id || ('cat' + i)).slice(0, 40),
+            name: String(c.name || 'หมวดไม่มีชื่อ').slice(0, 40),
+            words: words
+          });
+        }
+        if (!cats.length) return null;
+        const st = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+        const hearts = Math.max(3, Math.min(5, Math.round(Number(st.hearts) || DEFAULT_SETTINGS.hearts)));
+        const perLevel = Math.max(3, Math.min(10, Math.round(Number(st.perLevel) || DEFAULT_SETTINGS.perLevel)));
+        const difficulty = ['easy', 'normal', 'hard'].indexOf(st.difficulty) !== -1 ? st.difficulty : 'normal';
+        return {
+          categories: cats,
+          settings: { hearts: hearts, perLevel: perLevel, difficulty: difficulty, shuffle: Boolean(st.shuffle) },
+          activeId: typeof raw.activeId === 'string' ? raw.activeId.slice(0, 40) : cats[0].id
+        };
+      }
+
+      function readLocal(key) {
+        try {
+          const v = window.localStorage.getItem(key);
+          return v ? JSON.parse(v) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function writeLocal(key, value) {
+        try {
+          if (value === null) window.localStorage.removeItem(key);
+          else window.localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      let sharedConfig = null; // teacher's word sets from the artifact database
+      let localConfig = sanitizeConfig(readLocal(LOCAL_CONFIG_KEY)); // this device only
+      let activePref = readLocal(LOCAL_ACTIVE_KEY);
+      const LOCAL_SEL_KEY = 'balloonSpell.off.v1';
+      // Words switched off on this device only: { categoryId: ['pen', ...] }
+      let localOff = readLocal(LOCAL_SEL_KEY);
+      if (!localOff || typeof localOff !== 'object' || Array.isArray(localOff)) localOff = {};
+
+      // Which words of a category are switched on for play
+      function isWordOn(cat, w) {
+        const list = localOff[cat.id];
+        if (Array.isArray(list)) return list.indexOf(w.en) === -1;
+        return w.off !== true;
+      }
+
+      function currentConfig() {
+        return localConfig || sharedConfig || defaultConfig();
+      }
+
+      function activeCategory() {
+        const conf = currentConfig();
+        const pick = function (id) {
+          for (let i = 0; i < conf.categories.length; i++) {
+            if (conf.categories[i].id === id) return conf.categories[i];
+          }
+          return null;
+        };
+        return pick(activePref) || pick(conf.activeId) || conf.categories[0];
+      }
+
+      function distractorsFor(difficulty, lvlIdx) {
+        if (difficulty === 'easy') return 3 + Math.min(1, lvlIdx);
+        if (difficulty === 'hard') return Math.min(12, 8 + lvlIdx);
+        return Math.min(9, 3 + lvlIdx);
+      }
+
+      function buildLevels() {
+        const conf = currentConfig();
+        const st = conf.settings;
+        const cat = activeCategory();
+        let pool = cat.words.filter(function (w) { return isValidEnglish(w.en); });
+        const onlyOn = pool.filter(function (w) { return isWordOn(cat, w); });
+        if (onlyOn.length) pool = onlyOn;
+        let items = pool.map(function (w) {
+          return { units: cleanEnglish(w.en).toUpperCase().split(''), emoji: w.emoji || '', thai: w.th || '' };
+        });
+        if (!items.length) {
+          items = [{ units: ['C', 'A', 'T'], emoji: '🐱', thai: 'แมว' }];
+        }
+        if (st.shuffle) {
+          for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = items[i];
+            items[i] = items[j];
+            items[j] = tmp;
+          }
+        }
+        const per = Math.max(1, st.perLevel);
+        const levels = [];
+        for (let i = 0; i < items.length; i += per) {
+          const idx = levels.length;
+          levels.push({
+            level: idx + 1,
+            maxHearts: st.hearts,
+            distractorCount: distractorsFor(st.difficulty, idx),
+            isSightMain: false,
+            items: items.slice(i, i + per)
+          });
+        }
+        // Fold a lone leftover word into the previous level
+        if (levels.length > 1 && levels[levels.length - 1].items.length === 1) {
+          const last = levels.pop();
+          levels[levels.length - 1].items = levels[levels.length - 1].items.concat(last.items);
+        }
+        return levels;
+      }
+
+      let LEVELS = buildLevels();
+
+      const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      const PRAISE_MESSAGES = [
+        'สุดยอดเลย!',
+        'เก่งมากจ้า!',
+        'เป่าลมป่องแล้ว!',
+        'สะกดได้เยี่ยมมาก!'
+      ];
+      const CONFETTI_COLORS = ['#FF6B6B', '#FF9F1C', '#2EC4B6', '#7C5CFC', '#FFD23F', '#57C84D'];
+      const SPARKLE_COLORS = ['#FFD23F', '#FF9F1C', '#FFFFFF'];
+      const BALLOON_STRIPES = ['#FF6B6B', '#FF9F1C', '#2EC4B6', '#7C5CFC', '#FF6B6B'];
+
+      // Lookup helpers with safe fallbacks (no undefined/NaN)
+      function getPraiseForWord(wordIndex) {
+        const idx = Math.abs(Number(wordIndex) || 0) % PRAISE_MESSAGES.length;
+        return PRAISE_MESSAGES[idx] || 'เก่งมากจ้า!';
+      }
+
+      function getLevelConfig(lvlIdx) {
+        const safeIdx = Math.max(0, Math.min(LEVELS.length - 1, Number(lvlIdx) || 0));
+        return LEVELS[safeIdx];
+      }
+
+      // ==========================================
+      // 2. DOM REFERENCES & AUDIO
+      // ==========================================
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const hudEl = document.getElementById('hud');
+      const wordCounterChip = document.getElementById('wordCounterChip');
+      const heartsChip = document.getElementById('heartsChip');
+      const helpBtn = document.getElementById('helpBtn');
+
+      const promptCard = document.getElementById('promptCard');
+      const promptMain = document.getElementById('promptMain');
+      const promptEmoji = document.getElementById('promptEmoji');
+      const promptThai = document.getElementById('promptThai');
+      const promptBadge = document.getElementById('promptBadge');
+      const wrongToast = document.getElementById('wrongToast');
+
+      const howtoModal = document.getElementById('howto');
+      const startBtn = document.getElementById('startBtn');
+      const resumeBtn = document.getElementById('resumeBtn');
+
+      const endModal = document.getElementById('endModal');
+      const endStars = document.getElementById('endStars');
+      const endTitle = document.getElementById('endTitle');
+      const endScore = document.getElementById('endScore');
+      const replayBtn = document.getElementById('replayBtn');
+
+      let audioCtx = null;
+
+      function ensureAudio() {
+        try {
+          if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) audioCtx = new Ctx();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(function () {});
+          }
+        } catch (e) {
+          // Audio optional
+        }
+      }
+
+      function playTone(freq, duration, type, gainVal, delaySec) {
+        try {
+          if (!audioCtx || audioCtx.state !== 'running') return;
+          const now = audioCtx.currentTime + (delaySec || 0);
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type || 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(gainVal || 0.08, now + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        } catch (e) {
+          // Ignore sound errors
+        }
+      }
+
+      function sfxCorrect() {
+        playTone(523.25, 0.14, 'triangle', 0.09, 0);
+        playTone(659.25, 0.18, 'triangle', 0.09, 0.07);
+      }
+
+      function sfxWrong() {
+        playTone(260, 0.18, 'sine', 0.07, 0);
+        playTone(195, 0.22, 'sine', 0.06, 0.09);
+      }
+
+      function sfxWordComplete() {
+        // Cheerful horn "ปู๊น!"
+        playTone(440, 0.12, 'triangle', 0.1, 0);
+        playTone(554.37, 0.12, 'triangle', 0.1, 0.1);
+        playTone(659.25, 0.28, 'triangle', 0.11, 0.2);
+      }
+
+      function sfxOutOfAir() {
+        playTone(330, 0.16, 'sine', 0.07, 0);
+        playTone(246.94, 0.25, 'sine', 0.07, 0.12);
+      }
+
+      // ==========================================
+      // 3. GAME STATE & TIMERS
+      // ==========================================
+      let gameState = 'HOWTO'; // 'HOWTO' | 'PAUSED' | 'PLAY' | 'END'
+      let pausedFrom = 'PLAY';
+      let busy = false;
+      let ignoreTapUntil = 0;
+
+      let levelIdx = 0;
+      let wordIdx = 0;
+      let score = 0;
+      let wrongTotal = 0;
+      let hearts = 5;
+      let maxHearts = 5;
+
+      let currentItem = null;
+      let revealedSlots = [];
+      let bucketButtons = []; // { letter, status: 'normal'|'correct'|'wrong', x, y, w, h, shakeTimer, bounceTimer }
+      let cursorIdx = 0;
+
+      // Visual & animation state
+      let W = window.innerWidth || 390;
+      let H = window.innerHeight || 640;
+      let dpr = Math.min(2, window.devicePixelRatio || 1);
+
+      let balloonScale = 0.62;
+      let balloonTargetScale = 0.62;
+      let balloonBounceVel = 0;
+      let balloonFlyY = 0; // negative = flying up, positive = dropping down
+      let balloonDropOffset = 0; // temporary drop on out-of-air
+      let balloonBobTime = 0;
+      let balloonEntranceY = 0; // slide in from top when next word arrives
+
+      let slotScales = [];
+      let sparkles = [];
+      let confetti = [];
+      let clouds = [];
+
+      let levelBannerTimer = 0;
+      let levelBannerText = '';
+      let outOfAirBadgeTimer = 0;
+      let wrongToastTimer = 0;
+
+      let activeTimeouts = [];
+      let pausedElapsedTracker = 0;
+      let lastFrameTime = null;
+
+      // Computed layout boxes
+      let layout = {
+        hudBottom: 56,
+        promptTop: 66,
+        promptHeight: 84,
+        promptBottom: 150,
+        bucketTop: 420,
+        bucketHeight: 160,
+        slotTop: 350,
+        slotSize: 52,
+        slotBottom: 410,
+        balloonAreaTop: 150,
+        balloonAreaHeight: 200,
+        balloonR: 54,
+        balloonCx: 195,
+        balloonCy: 230
+      };
+
+      function scheduleTimeout(fn, ms) {
+        const id = window.setTimeout(function () {
+          activeTimeouts = activeTimeouts.filter(function (item) { return item !== id; });
+          fn();
+        }, ms);
+        activeTimeouts.push(id);
+        return id;
+      }
+
+      function clearAllTimeouts() {
+        for (let i = 0; i < activeTimeouts.length; i++) {
+          window.clearTimeout(activeTimeouts[i]);
+        }
+        activeTimeouts = [];
+      }
+
+      function hideWrongToast() {
+        wrongToastTimer = 0;
+        wrongToast.classList.remove('show');
+      }
+
+      function showWrongToast() {
+        wrongToastTimer = 0.9;
+        wrongToast.classList.add('show');
+      }
+
+      // ==========================================
+      // 4. CLOUDS & SCENE INITIALIZATION
+      // ==========================================
+      function createClouds() {
+        clouds = [
+          { xRatio: 0.12, yRatio: 0.20, speed: 14, scale: 0.95, puffs: 3 },
+          { xRatio: 0.52, yRatio: 0.15, speed: 9, scale: 0.78, puffs: 5 },
+          { xRatio: 0.78, yRatio: 0.28, speed: 18, scale: 1.05, puffs: 3 },
+          { xRatio: 0.34, yRatio: 0.35, speed: 11, scale: 0.72, puffs: 5 }
+        ];
+      }
+
+      function calcBalloonFillScale() {
+        if (!currentItem || !currentItem.units.length) return 0.62;
+        let total = 0;
+        let filled = 0;
+        for (let i = 0; i < currentItem.units.length; i++) {
+          if (!isLetterUnit(currentItem.units[i])) continue;
+          total += 1;
+          if (revealedSlots[i]) filled += 1;
+        }
+        if (!total) return 1;
+        const ratio = Math.max(0, Math.min(1, filled / total));
+        return 0.62 + ratio * 0.38;
+      }
+
+      function buildBucketForItem(item, levelCfg) {
+        const required = item.units.filter(isLetterUnit);
+        const uniqueRequired = Array.from(new Set(required));
+        const pool = ALL_LETTERS.filter(function (ch) {
+          return uniqueRequired.indexOf(ch) === -1;
+        });
+
+        // Shuffle pool
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = pool[i];
+          pool[i] = pool[j];
+          pool[j] = tmp;
+        }
+
+        const distractorsNeeded = Math.min(
+          levelCfg.distractorCount,
+          Math.max(0, 18 - uniqueRequired.length),
+          pool.length
+        );
+        const chosenDistractors = pool.slice(0, distractorsNeeded);
+        const combined = uniqueRequired.concat(chosenDistractors);
+
+        // Shuffle combined letters
+        for (let i = combined.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = combined[i];
+          combined[i] = combined[j];
+          combined[j] = tmp;
+        }
+
+        bucketButtons = combined.map(function (ch) {
+          return {
+            letter: ch,
+            status: 'normal',
+            x: 0,
+            y: 0,
+            w: 44,
+            h: 44,
+            shakeTimer: 0,
+            bounceTimer: 0
+          };
+        });
+        cursorIdx = 0;
+      }
+
+      function setupWord(lIdx, wIdx, slideInFromTop) {
+        const lvlCfg = getLevelConfig(lIdx);
+        const item = lvlCfg.items[wIdx] || lvlCfg.items[0];
+        currentItem = item;
+        revealedSlots = item.units.map(function (u) { return !isLetterUnit(u); });
+        slotScales = item.units.map(function () { return 1; });
+
+        hearts = lvlCfg.maxHearts;
+        maxHearts = lvlCfg.maxHearts;
+        outOfAirBadgeTimer = 0;
+        balloonDropOffset = 0;
+        balloonFlyY = 0;
+        balloonEntranceY = slideInFromTop ? -Math.max(240, H * 0.45) : 0;
+
+        balloonTargetScale = calcBalloonFillScale();
+        balloonScale = balloonTargetScale;
+        balloonBounceVel = 0;
+
+        buildBucketForItem(item, lvlCfg);
+        syncDomPromptAndHud();
+        recomputeLayout();
+      }
+
+      function syncDomPromptAndHud() {
+        const lvlCfg = getLevelConfig(levelIdx);
+        const totalWords = lvlCfg.items.length;
+
+        wordCounterChip.textContent = 'คำที่ ' + (wordIdx + 1) + '/' + totalWords;
+
+        // Hearts
+        let heartsHtml = '';
+        for (let i = 0; i < maxHearts; i++) {
+          const isLost = i >= hearts;
+          heartsHtml += '<span class="heart-icon' + (isLost ? ' lost' : '') + '">♥</span>';
+        }
+        heartsChip.innerHTML = heartsHtml;
+
+        // Prompt card
+        if (currentItem) {
+          promptEmoji.textContent = currentItem.emoji;
+          promptThai.textContent = currentItem.thai;
+        }
+        promptMain.classList.toggle('sight-mode', Boolean(lvlCfg.isSightMain));
+        promptBadge.textContent = 'ด่าน ' + lvlCfg.level + ' · ⭐ ' + score;
+      }
+
+      // ==========================================
+      // 5. RESPONSIVE LAYOUT (BOTTOM-UP)
+      // ==========================================
+      function recomputeLayout() {
+        W = Math.max(320, window.innerWidth || 390);
+        H = Math.max(420, window.innerHeight || 640);
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const pad = Math.max(10, W * 0.03);
+        const hudRect = hudEl.getBoundingClientRect();
+        const hudBottom = Math.max(48, (hudRect && hudRect.bottom ? hudRect.bottom : pad + 44));
+
+        // Prompt card sizing
+        const cardW = Math.min(W * 0.86, 460);
+        let cardH = Math.max(56, Math.min(120, H * 0.14));
+        const maxBucketTotalH = H * 0.34;
+
+        // Columns ~ W / 64 (at least 3)
+        let cols = Math.max(3, Math.min(bucketButtons.length || 3, Math.floor(W / 64)));
+        if (bucketButtons.length > 0 && bucketButtons.length < cols) {
+          cols = bucketButtons.length;
+        }
+        const rows = Math.max(1, Math.ceil((bucketButtons.length || 1) / cols));
+
+        const gapX = Math.max(5, Math.min(10, W * 0.015));
+        const gapY = Math.max(5, Math.min(9, H * 0.012));
+        const availBucketW = W - pad * 2 - gapX * (cols - 1);
+        let btnSize = Math.floor(availBucketW / cols);
+        btnSize = Math.max(36, Math.min(96, btnSize));
+
+        let bucketH = rows * btnSize + (rows - 1) * gapY + 6;
+        if (bucketH > maxBucketTotalH) {
+          btnSize = Math.max(32, Math.floor((maxBucketTotalH - (rows - 1) * gapY - 6) / rows));
+          bucketH = rows * btnSize + (rows - 1) * gapY + 6;
+        }
+
+        // Slot sizing: one row per English word (e.g. PENCIL / CASE)
+        const units = currentItem ? currentItem.units : ['C', 'A', 'T'];
+        const lines = [[]];
+        for (let i = 0; i < units.length; i++) {
+          if (units[i] === ' ') {
+            if (lines[lines.length - 1].length) lines.push([]);
+          } else {
+            lines[lines.length - 1].push(i);
+          }
+        }
+        const nRows = lines.length;
+        let maxLen = 1;
+        for (let i = 0; i < lines.length; i++) maxLen = Math.max(maxLen, lines[i].length);
+        const slotGap = Math.max(5, Math.min(12, W * 0.02));
+        const maxSlotByW = Math.floor((W - pad * 2 - slotGap * (maxLen - 1)) / maxLen);
+        const maxSlotByH = nRows > 1 ? Math.floor((H * 0.17 - slotGap * (nRows - 1)) / nRows) : Math.floor(H * 0.11);
+        let slotSize = Math.max(22, Math.min(84, maxSlotByW, maxSlotByH));
+        const slotBlockH = nRows * slotSize + (nRows - 1) * slotGap;
+
+        // Reserve space for rope stub under slots
+        const ropeStubH = Math.max(10, Math.round(slotSize * 0.24));
+
+        // Check if vertical space is tight; shrink balloon first, then prompt card
+        const minGapBetweenSections = 10;
+        let promptTop = hudBottom + 10;
+        let bucketTop = H - pad - bucketH;
+        let slotBottom = bucketTop - 10;
+        let slotTop = slotBottom - slotBlockH;
+
+        const slotRects = [];
+        for (let r = 0; r < lines.length; r++) {
+          const line = lines[r];
+          const rowW = line.length * slotSize + Math.max(0, line.length - 1) * slotGap;
+          const startX = (W - rowW) / 2;
+          for (let k = 0; k < line.length; k++) {
+            slotRects[line[k]] = {
+              x: startX + k * (slotSize + slotGap),
+              y: slotTop + r * (slotSize + slotGap),
+              lastRow: r === lines.length - 1
+            };
+          }
+        }
+
+        let balloonAreaTop = promptTop + cardH + minGapBetweenSections;
+        let balloonAreaHeight = slotTop - ropeStubH - minGapBetweenSections - balloonAreaTop;
+
+        if (balloonAreaHeight < 54 && cardH > 56) {
+          const deficit = 54 - balloonAreaHeight;
+          cardH = Math.max(56, cardH - deficit);
+          balloonAreaTop = promptTop + cardH + minGapBetweenSections;
+          balloonAreaHeight = Math.max(36, slotTop - ropeStubH - minGapBetweenSections - balloonAreaTop);
+        }
+
+        promptCard.style.top = Math.round(promptTop) + 'px';
+        promptCard.style.width = Math.round(cardW) + 'px';
+        promptCard.style.height = Math.round(cardH) + 'px';
+        promptCard.style.maxHeight = Math.round(cardH) + 'px';
+
+        wrongToast.style.top = Math.round(promptTop + cardH + 6) + 'px';
+
+        // Position bucket buttons from bottom up
+        for (let i = 0; i < bucketButtons.length; i++) {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const itemsInThisRow = (r === rows - 1) ? (bucketButtons.length - r * cols) : cols;
+          const rowTotalW = itemsInThisRow * btnSize + (itemsInThisRow - 1) * gapX;
+          const rowStartX = (W - rowTotalW) / 2;
+
+          bucketButtons[i].x = rowStartX + c * (btnSize + gapX);
+          bucketButtons[i].y = bucketTop + r * (btnSize + gapY);
+          bucketButtons[i].w = btnSize;
+          bucketButtons[i].h = btnSize;
+        }
+
+        // Balloon radius & center
+        // Whole balloon (~2.7R) centered in space between prompt card and slot row
+        const safeAreaH = Math.max(40, balloonAreaHeight);
+        const R = Math.max(14, Math.min(0.32 * safeAreaH, 0.21 * W, 78));
+        const balloonCx = W * 0.5;
+        const balloonCy = balloonAreaTop + 0.5 * safeAreaH - 0.37 * R;
+
+        layout = {
+          hudBottom: hudBottom,
+          promptTop: promptTop,
+          promptHeight: cardH,
+          promptBottom: promptTop + cardH,
+          bucketTop: bucketTop,
+          bucketHeight: bucketH,
+          slotTop: slotTop,
+          slotSize: slotSize,
+          slotGap: slotGap,
+          slotRects: slotRects,
+          slotBottom: slotBottom,
+          balloonAreaTop: balloonAreaTop,
+          balloonAreaHeight: safeAreaH,
+          balloonR: R,
+          balloonCx: balloonCx,
+          balloonCy: balloonCy
+        };
+      }
+
+      // ==========================================
+      // 6. GAMEPLAY ACTIONS & ANSWER LOCK
+      // ==========================================
+      function spawnSparklesAtSlot(slotIndex) {
+        const rect = layout.slotRects && layout.slotRects[slotIndex];
+        if (!rect) return;
+        const cx = rect.x + layout.slotSize / 2;
+        const cy = rect.y + layout.slotSize / 2;
+
+        for (let i = 0; i < 10; i++) {
+          const angle = (Math.PI * 2 * i) / 10 + Math.random() * 0.3;
+          const speed = 55 + Math.random() * 85;
+          sparkles.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 35,
+            size: 4 + Math.random() * 4,
+            color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+            life: 0.55 + Math.random() * 0.2,
+            maxLife: 0.75
+          });
+        }
+      }
+
+      function spawnConfettiWaves() {
+        const waves = [0, 220, 440];
+        for (let wIdx = 0; wIdx < waves.length; wIdx++) {
+          scheduleTimeout(function () {
+            for (let i = 0; i < 28; i++) {
+              confetti.push({
+                x: W * (0.15 + Math.random() * 0.7),
+                y: layout.balloonCy - layout.balloonR * 0.5,
+                vx: (Math.random() - 0.5) * 220,
+                vy: -90 - Math.random() * 140,
+                w: 7 + Math.random() * 6,
+                h: 5 + Math.random() * 4,
+                rot: Math.random() * Math.PI * 2,
+                vRot: (Math.random() - 0.5) * 10,
+                color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+                life: 1.4 + Math.random() * 0.5
+              });
+            }
+          }, waves[wIdx]);
+        }
+      }
+
+      function selectBucketIndex(idx) {
+        if (gameState !== 'PLAY' || busy) return;
+        if (idx < 0 || idx >= bucketButtons.length) return;
+
+        ensureAudio();
+        cursorIdx = idx;
+        const btn = bucketButtons[idx];
+        if (!btn || btn.status === 'correct' || btn.status === 'wrong') {
+          return;
+        }
+
+        const matchedIndices = [];
+        for (let i = 0; i < currentItem.units.length; i++) {
+          if (currentItem.units[i] === btn.letter && !revealedSlots[i]) {
+            matchedIndices.push(i);
+          }
+        }
+
+        if (matchedIndices.length > 0) {
+          // Correct letter
+          btn.status = 'correct';
+          btn.bounceTimer = 0.35;
+
+          for (let k = 0; k < matchedIndices.length; k++) {
+            const sIdx = matchedIndices[k];
+            revealedSlots[sIdx] = true;
+            slotScales[sIdx] = 1.35;
+            spawnSparklesAtSlot(sIdx);
+          }
+
+          score += matchedIndices.length * 50;
+          balloonTargetScale = calcBalloonFillScale();
+          balloonBounceVel = 2.4;
+          sfxCorrect();
+
+          const allDone = revealedSlots.every(Boolean);
+          if (allDone) {
+            busy = true;
+            score += 100;
+            syncDomPromptAndHud();
+            sfxWordComplete();
+            spawnConfettiWaves();
+
+            // Balloon flies up off screen in 0.9s, then next word slides down in 0.5s
+            scheduleTimeout(function () {
+              balloonFlyY = -H * 1.15;
+            }, 250);
+
+            scheduleTimeout(function () {
+              advanceAfterWordComplete();
+            }, 1150);
+          } else {
+            syncDomPromptAndHud();
+          }
+        } else {
+          // Wrong letter
+          btn.status = 'wrong';
+          btn.shakeTimer = 0.36;
+          wrongTotal += 1;
+          hearts = Math.max(0, hearts - 1);
+          balloonBounceVel = -1.2;
+          sfxWrong();
+          showWrongToast();
+          syncDomPromptAndHud();
+
+          if (hearts <= 0) {
+            busy = true;
+            sfxOutOfAir();
+            outOfAirBadgeTimer = 1.35;
+            balloonDropOffset = 70;
+
+            scheduleTimeout(function () {
+              balloonDropOffset = 0;
+              balloonBounceVel = 1.8;
+              const lvlCfg = getLevelConfig(levelIdx);
+              hearts = lvlCfg.maxHearts;
+              syncDomPromptAndHud();
+              busy = false;
+            }, 950);
+          }
+        }
+      }
+
+      function advanceAfterWordComplete() {
+        const lvlCfg = getLevelConfig(levelIdx);
+        if (wordIdx + 1 < lvlCfg.items.length) {
+          wordIdx += 1;
+          balloonFlyY = 0;
+          setupWord(levelIdx, wordIdx, true);
+          busy = false;
+        } else {
+          // Completed level
+          if (levelIdx + 1 < LEVELS.length) {
+            levelBannerText = 'ผ่านด่าน ' + lvlCfg.level + '! 🎉';
+            levelBannerTimer = 1.2;
+            scheduleTimeout(function () {
+              levelIdx += 1;
+              wordIdx = 0;
+              balloonFlyY = 0;
+              setupWord(levelIdx, wordIdx, true);
+              busy = false;
+            }, 1200);
+          } else {
+            // Final level finished -> End screen directly
+            balloonFlyY = 0;
+            busy = false;
+            openEndModal();
+          }
+        }
+      }
+
+      function computeStars() {
+        if (wrongTotal <= 1) return 3;
+        if (wrongTotal <= 3) return 2;
+        return 1;
+      }
+
+      function openEndModal() {
+        gameState = 'END';
+        hideWrongToast();
+        const stars = computeStars();
+        const starSpans = endStars.querySelectorAll('span');
+        for (let i = 0; i < starSpans.length; i++) {
+          if (i < stars) {
+            starSpans[i].textContent = '⭐';
+            starSpans[i].className = 'star-earned';
+          } else {
+            starSpans[i].textContent = '☆';
+            starSpans[i].className = 'star-empty';
+          }
+        }
+        endTitle.textContent = 'เก่งมาก! 🎈';
+        endScore.textContent = 'คะแนน ' + score;
+        endModal.classList.add('open');
+      }
+
+      function newGame() {
+        clearAllTimeouts();
+        hideWrongToast();
+        endModal.classList.remove('open');
+        howtoModal.classList.remove('open');
+
+        LEVELS = buildLevels();
+        levelIdx = 0;
+        wordIdx = 0;
+        score = 0;
+        wrongTotal = 0;
+        busy = false;
+        cursorIdx = 0;
+        sparkles = [];
+        confetti = [];
+        levelBannerTimer = 0;
+        outOfAirBadgeTimer = 0;
+        pausedElapsedTracker = 0;
+
+        gameState = 'PLAY';
+        setupWord(0, 0, false);
+      }
+
+      // ==========================================
+      // 7. HOW-TO MODAL & CONTROLS
+      // ==========================================
+      function setHowtoMode(isStart) {
+        startBtn.style.display = isStart ? 'block' : 'none';
+        resumeBtn.style.display = isStart ? 'none' : 'block';
+        document.getElementById('catSection').hidden = !isStart;
+        document.getElementById('openSettingsFromStart').hidden = !isStart;
+      }
+
+      function openHowToFromHelp() {
+        if (gameState === 'HOWTO' || gameState === 'PAUSED' || busy) return;
+        pausedFrom = gameState;
+        gameState = 'PAUSED';
+        setHowtoMode(false);
+        howtoModal.classList.add('open');
+      }
+
+      function showStartScreen() {
+        clearAllTimeouts();
+        hideWrongToast();
+        endModal.classList.remove('open');
+        busy = false;
+        gameState = 'HOWTO';
+        LEVELS = buildLevels();
+        levelIdx = 0;
+        wordIdx = 0;
+        setupWord(0, 0, false);
+        renderCategoryChips();
+        setHowtoMode(true);
+        howtoModal.classList.add('open');
+      }
+
+      function closeHowToFromResume() {
+        howtoModal.classList.remove('open');
+        gameState = pausedFrom || 'PLAY';
+        ignoreTapUntil = performance.now() + 300;
+      }
+
+      helpBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        helpBtn.blur();
+        ensureAudio();
+        openHowToFromHelp();
+      });
+
+      startBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (startBtn.disabled) return;
+        ensureAudio();
+        persistPicks();
+        ignoreTapUntil = performance.now() + 300;
+        newGame();
+      });
+
+      resumeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        ensureAudio();
+        closeHowToFromResume();
+      });
+
+      replayBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        ensureAudio();
+        ignoreTapUntil = performance.now() + 300;
+        newGame();
+      });
+
+
+      // ==========================================
+      // 7b. WORD SETS & SETTINGS
+      // ==========================================
+      const settingsModal = document.getElementById('settingsModal');
+      const catChips = document.getElementById('catChips');
+      const catSelect = document.getElementById('catSelect');
+      const catNameInput = document.getElementById('catName');
+      const addCatBtn = document.getElementById('addCatBtn');
+      const delCatBtn = document.getElementById('delCatBtn');
+      const wordListEl = document.getElementById('wordList');
+      const wordCountEl = document.getElementById('wordCount');
+      const addWordBtn = document.getElementById('addWordBtn');
+      const bulkText = document.getElementById('bulkText');
+      const bulkAddBtn = document.getElementById('bulkAddBtn');
+      const setHearts = document.getElementById('setHearts');
+      const setPerLevel = document.getElementById('setPerLevel');
+      const setDifficulty = document.getElementById('setDifficulty');
+      const setShuffle = document.getElementById('setShuffle');
+      const settingsError = document.getElementById('settingsError');
+      const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+      const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+      const saveNote = document.getElementById('saveNote');
+      const useSharedBtn = document.getElementById('useSharedBtn');
+      const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+
+      let sharedDb = null;
+      let canShare = false; // true when this viewer may update the shared word sets
+      let draft = null;
+      let draftCatId = null;
+      let settingsFrom = 'HOWTO';
+      let confirmTimers = {};
+
+      function renderCategoryChips() {
+        const conf = currentConfig();
+        const active = activeCategory();
+        catChips.textContent = '';
+        for (let i = 0; i < conf.categories.length; i++) {
+          const c = conf.categories[i];
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'chip-btn' + (c.id === active.id ? ' active' : '');
+          b.setAttribute('aria-pressed', c.id === active.id ? 'true' : 'false');
+          b.appendChild(document.createTextNode(c.name));
+          const cnt = document.createElement('span');
+          cnt.className = 'chip-count';
+          cnt.textContent = c.words.length + ' คำ';
+          b.appendChild(cnt);
+          b.addEventListener('click', function () {
+            activePref = c.id;
+            writeLocal(LOCAL_ACTIVE_KEY, c.id);
+            showStartScreen();
+          });
+          catChips.appendChild(b);
+        }
+        renderPicker();
+      }
+
+      // ---- Word picker on the start screen ----
+      const pickGrid = document.getElementById('pickGrid');
+      const pickTitle = document.getElementById('pickTitle');
+      const pickNote = document.getElementById('pickNote');
+      let pickOn = {}; // en -> boolean, for the active category
+
+      function renderPicker() {
+        const cat = activeCategory();
+        pickOn = {};
+        pickGrid.textContent = '';
+        for (let i = 0; i < cat.words.length; i++) {
+          const w = cat.words[i];
+          pickOn[w.en] = isWordOn(cat, w);
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pick-chip';
+          const tick = document.createElement('span');
+          tick.className = 'tick';
+          b.appendChild(tick);
+          b.appendChild(document.createTextNode((w.emoji ? w.emoji + ' ' : '') + w.en));
+          b.title = w.th;
+          const paint = function () {
+            b.setAttribute('aria-pressed', pickOn[w.en] ? 'true' : 'false');
+            tick.textContent = pickOn[w.en] ? '✓' : '';
+          };
+          paint();
+          b.addEventListener('click', function () {
+            pickOn[w.en] = !pickOn[w.en];
+            paint();
+            updatePickCount();
+          });
+          pickGrid.appendChild(b);
+        }
+        updatePickCount();
+      }
+
+      function pickCount() {
+        let n = 0;
+        for (const k in pickOn) if (pickOn[k]) n += 1;
+        return n;
+      }
+
+      function updatePickCount() {
+        const n = pickCount();
+        const total = Object.keys(pickOn).length;
+        pickTitle.textContent = 'เลือกคำที่จะเล่น (' + n + '/' + total + ')';
+        startBtn.textContent = n ? 'เริ่มเล่น ' + n + ' คำ! 🚀' : 'เลือกอย่างน้อย 1 คำ';
+        startBtn.disabled = n === 0;
+        pickNote.textContent = canShare
+          ? 'กดเริ่มเล่นแล้ว นักเรียนที่เปิดลิงก์นี้จะได้คำชุดเดียวกัน'
+          : 'แตะคำเพื่อเลือกหรือยกเลิก';
+      }
+
+      function setAllPicks(on) {
+        for (const k in pickOn) pickOn[k] = on;
+        const chips = pickGrid.querySelectorAll('.pick-chip');
+        for (let i = 0; i < chips.length; i++) {
+          chips[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+          chips[i].querySelector('.tick').textContent = on ? '✓' : '';
+        }
+        updatePickCount();
+      }
+
+      document.getElementById('pickAllBtn').addEventListener('click', function () { setAllPicks(true); });
+      document.getElementById('pickNoneBtn').addEventListener('click', function () { setAllPicks(false); });
+
+      // Save the picked words: shared for the teacher, this device for everyone else
+      function persistPicks() {
+        const cat = activeCategory();
+        let changed = false;
+        const offList = [];
+        for (let i = 0; i < cat.words.length; i++) {
+          const w = cat.words[i];
+          const on = pickOn[w.en] !== false;
+          if (!on) offList.push(w.en);
+          if (on !== isWordOn(cat, w)) changed = true;
+        }
+        if (!changed) return;
+
+        if (sharedDb && canShare && !localConfig) {
+          const conf = clone(currentConfig());
+          for (let i = 0; i < conf.categories.length; i++) {
+            if (conf.categories[i].id !== cat.id) continue;
+            conf.categories[i].words.forEach(function (w) {
+              if (offList.indexOf(w.en) !== -1) w.off = true;
+              else delete w.off;
+            });
+          }
+          sharedConfig = conf;
+          delete localOff[cat.id];
+          writeLocal(LOCAL_SEL_KEY, localOff);
+          sharedDb.doc('config/main').set(conf).catch(function () {
+            canShare = false;
+            localOff[cat.id] = offList;
+            writeLocal(LOCAL_SEL_KEY, localOff);
+          });
+        } else {
+          localOff[cat.id] = offList;
+          writeLocal(LOCAL_SEL_KEY, localOff);
+        }
+      }
+
+      function draftCat() {
+        for (let i = 0; i < draft.categories.length; i++) {
+          if (draft.categories[i].id === draftCatId) return draft.categories[i];
+        }
+        return draft.categories[0];
+      }
+
+      function armConfirm(btn, key, label, confirmLabel, action) {
+        if (confirmTimers[key]) {
+          window.clearTimeout(confirmTimers[key]);
+          confirmTimers[key] = null;
+          btn.classList.remove('confirming');
+          btn.textContent = label;
+          action();
+          return;
+        }
+        btn.classList.add('confirming');
+        btn.textContent = confirmLabel;
+        confirmTimers[key] = window.setTimeout(function () {
+          confirmTimers[key] = null;
+          btn.classList.remove('confirming');
+          btn.textContent = label;
+        }, 3000);
+      }
+
+      function renderDraft() {
+        const cat = draftCat();
+        draftCatId = cat.id;
+
+        catSelect.textContent = '';
+        for (let i = 0; i < draft.categories.length; i++) {
+          const opt = document.createElement('option');
+          opt.value = draft.categories[i].id;
+          opt.textContent = (draft.categories[i].name || 'หมวดไม่มีชื่อ') + ' (' + draft.categories[i].words.length + ')';
+          if (draft.categories[i].id === cat.id) opt.selected = true;
+          catSelect.appendChild(opt);
+        }
+        catNameInput.value = cat.name;
+        delCatBtn.disabled = draft.categories.length <= 1;
+        delCatBtn.style.opacity = draft.categories.length <= 1 ? '0.4' : '1';
+
+        wordListEl.textContent = '';
+        for (let i = 0; i < cat.words.length; i++) {
+          wordListEl.appendChild(buildWordRow(cat, i));
+        }
+        wordCountEl.textContent = '· ' + cat.words.length + ' คำ';
+
+        setHearts.value = String(draft.settings.hearts);
+        setPerLevel.value = String(draft.settings.perLevel);
+        if (!setPerLevel.value) setPerLevel.value = '5';
+        setDifficulty.value = draft.settings.difficulty;
+        setShuffle.checked = Boolean(draft.settings.shuffle);
+      }
+
+      function buildWordRow(cat, i) {
+        const w = cat.words[i];
+        const row = document.createElement('div');
+        row.className = 'word-row';
+
+        const emo = document.createElement('input');
+        emo.className = 'field w-emoji';
+        emo.type = 'text';
+        emo.maxLength = 16;
+        emo.value = w.emoji;
+        emo.placeholder = '🙂';
+        emo.setAttribute('aria-label', 'รูปของคำที่ ' + (i + 1));
+        emo.addEventListener('input', function () { w.emoji = emo.value; });
+
+        const en = document.createElement('input');
+        en.className = 'field';
+        en.type = 'text';
+        en.maxLength = 40;
+        en.value = w.en;
+        en.placeholder = 'pencil';
+        en.autocapitalize = 'off';
+        en.spellcheck = false;
+        en.setAttribute('aria-label', 'คำภาษาอังกฤษที่ ' + (i + 1));
+        en.addEventListener('input', function () {
+          w.en = en.value;
+          en.classList.toggle('invalid', en.value.trim() !== '' && !isValidEnglish(en.value));
+        });
+        if (w.en.trim() !== '' && !isValidEnglish(w.en)) en.classList.add('invalid');
+
+        const th = document.createElement('input');
+        th.className = 'field';
+        th.type = 'text';
+        th.maxLength = 40;
+        th.value = w.th;
+        th.placeholder = 'ดินสอ';
+        th.setAttribute('aria-label', 'คำแปลของคำที่ ' + (i + 1));
+        th.addEventListener('input', function () { w.th = th.value; });
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'mini-btn danger';
+        del.textContent = '✕';
+        del.setAttribute('aria-label', 'ลบคำที่ ' + (i + 1));
+        del.addEventListener('click', function () {
+          cat.words.splice(i, 1);
+          renderDraft();
+        });
+
+        row.appendChild(emo);
+        row.appendChild(en);
+        row.appendChild(th);
+        row.appendChild(del);
+        return row;
+      }
+
+      function updateSaveNote() {
+        if (canShare) {
+          saveNote.textContent = 'บันทึกแล้วทุกคนที่เปิดลิงก์นี้จะได้ชุดคำเดียวกัน';
+        } else {
+          saveNote.textContent = 'บันทึกไว้ในเครื่องนี้เท่านั้น (เฉพาะเจ้าของหรือผู้แก้ไขลิงก์ที่แชร์ให้ทุกคนได้)';
+        }
+        useSharedBtn.hidden = !(localConfig && sharedConfig);
+      }
+
+      function showSettingsError(msg) {
+        settingsError.textContent = msg;
+        settingsError.hidden = !msg;
+      }
+
+      function openSettings() {
+        if (gameState === 'PAUSED' || gameState === 'SETTINGS' || busy) return;
+        settingsFrom = gameState;
+        if (gameState === 'PLAY') pausedFrom = 'PLAY';
+        gameState = 'SETTINGS';
+        draft = clone(currentConfig());
+        draft.categories.forEach(function (c) {
+          c.words.forEach(function (w) {
+            w.en = String(w.en || '');
+            w.th = String(w.th || '');
+            w.emoji = String(w.emoji || '');
+          });
+        });
+        draftCatId = activeCategory().id;
+        bulkText.value = '';
+        showSettingsError('');
+        renderDraft();
+        updateSaveNote();
+        settingsModal.classList.add('open');
+        settingsModal.scrollTop = 0;
+      }
+
+      function closeSettings(applied) {
+        settingsModal.classList.remove('open');
+        draft = null;
+        if (settingsFrom === 'END' && !applied) {
+          gameState = 'END';
+        } else if (applied || settingsFrom !== 'PLAY') {
+          showStartScreen();
+        } else {
+          gameState = 'PLAY';
+          ignoreTapUntil = performance.now() + 300;
+        }
+      }
+
+      function validateDraft() {
+        const conf = { categories: [], settings: {
+          hearts: Number(setHearts.value),
+          perLevel: Number(setPerLevel.value),
+          difficulty: setDifficulty.value,
+          shuffle: setShuffle.checked
+        }, activeId: draftCatId };
+        for (let i = 0; i < draft.categories.length; i++) {
+          const c = draft.categories[i];
+          const name = String(c.name || '').trim();
+          const words = [];
+          for (let j = 0; j < c.words.length; j++) {
+            const w = c.words[j];
+            const en = cleanEnglish(w.en);
+            if (!en && !String(w.th).trim()) continue; // empty row
+            if (!isValidEnglish(en)) {
+              draftCatId = c.id;
+              renderDraft();
+              return { error: 'หมวด "' + (name || 'ไม่มีชื่อ') + '" คำที่ ' + (j + 1) + ' ใช้ไม่ได้: พิมพ์ได้เฉพาะ A-Z และเว้นวรรค ไม่เกิน 3 คำ คำละไม่เกิน 12 ตัว' };
+            }
+            const nw = { en: en.toLowerCase(), th: String(w.th).trim(), emoji: String(w.emoji).trim() };
+            if (w.off === true) nw.off = true;
+            words.push(nw);
+          }
+          if (!name) {
+            draftCatId = c.id;
+            renderDraft();
+            return { error: 'ตั้งชื่อหมวดก่อนบันทึก' };
+          }
+          if (!words.length) {
+            draftCatId = c.id;
+            renderDraft();
+            return { error: 'หมวด "' + name + '" ยังไม่มีคำ เพิ่มอย่างน้อย 1 คำ หรือลบหมวดนี้' };
+          }
+          conf.categories.push({ id: c.id, name: name, words: words });
+        }
+        return { conf: sanitizeConfig(conf) };
+      }
+
+      function saveSettings() {
+        const res = validateDraft();
+        if (res.error || !res.conf) {
+          showSettingsError(res.error || 'บันทึกไม่ได้ ลองตรวจคำอีกครั้ง');
+          return;
+        }
+        const conf = res.conf;
+        activePref = draftCatId;
+        writeLocal(LOCAL_ACTIVE_KEY, draftCatId);
+        saveSettingsBtn.disabled = true;
+
+        const finish = function (sharedOk) {
+          saveSettingsBtn.disabled = false;
+          if (sharedOk) {
+            sharedConfig = conf;
+            localConfig = null;
+            writeLocal(LOCAL_CONFIG_KEY, null);
+          } else {
+            localConfig = conf;
+            writeLocal(LOCAL_CONFIG_KEY, conf);
+          }
+          closeSettings(true);
+        };
+
+        if (sharedDb && canShare !== false) {
+          sharedDb.doc('config/main').set(conf).then(function () {
+            finish(true);
+          }).catch(function () {
+            canShare = false;
+            finish(false);
+          });
+        } else {
+          finish(false);
+        }
+      }
+
+      catSelect.addEventListener('change', function () {
+        draftCatId = catSelect.value;
+        renderDraft();
+      });
+
+      catNameInput.addEventListener('input', function () {
+        draftCat().name = catNameInput.value;
+        const opt = catSelect.options[catSelect.selectedIndex];
+        if (opt) opt.textContent = (catNameInput.value || 'หมวดไม่มีชื่อ') + ' (' + draftCat().words.length + ')';
+      });
+
+      addCatBtn.addEventListener('click', function () {
+        const id = 'cat' + Date.now().toString(36);
+        draft.categories.push({ id: id, name: 'หมวดใหม่', words: [{ en: '', th: '', emoji: '' }] });
+        draftCatId = id;
+        renderDraft();
+        catNameInput.focus();
+        catNameInput.select();
+      });
+
+      delCatBtn.addEventListener('click', function () {
+        if (draft.categories.length <= 1) return;
+        armConfirm(delCatBtn, 'delCat', 'ลบหมวด', 'กดอีกครั้งเพื่อลบ', function () {
+          draft.categories = draft.categories.filter(function (c) { return c.id !== draftCatId; });
+          draftCatId = draft.categories[0].id;
+          renderDraft();
+        });
+      });
+
+      addWordBtn.addEventListener('click', function () {
+        const cat = draftCat();
+        cat.words.push({ en: '', th: '', emoji: '' });
+        renderDraft();
+        const rows = wordListEl.querySelectorAll('.word-row');
+        const last = rows[rows.length - 1];
+        if (last) {
+          const inputs = last.querySelectorAll('input');
+          if (inputs[1]) inputs[1].focus();
+        }
+      });
+
+      bulkAddBtn.addEventListener('click', function () {
+        const lines = bulkText.value.split(/\r?\n/);
+        const cat = draftCat();
+        const bad = [];
+        let added = 0;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const parts = line.split(/\s*[,|\t]\s*/);
+          const en = cleanEnglish(parts[0]);
+          if (!isValidEnglish(en)) {
+            bad.push(line);
+            continue;
+          }
+          cat.words.push({ en: en.toLowerCase(), th: parts[1] || '', emoji: parts[2] || '' });
+          added += 1;
+        }
+        bulkText.value = bad.join('\n');
+        renderDraft();
+        showSettingsError(bad.length ? 'เพิ่มแล้ว ' + added + ' คำ · บรรทัดที่เหลือในช่องใช้ไม่ได้ ตรวจตัวสะกดแล้วกดเพิ่มอีกครั้ง' : '');
+      });
+
+      saveSettingsBtn.addEventListener('click', saveSettings);
+      cancelSettingsBtn.addEventListener('click', function () { closeSettings(false); });
+
+      useSharedBtn.addEventListener('click', function () {
+        localConfig = null;
+        writeLocal(LOCAL_CONFIG_KEY, null);
+        closeSettings(true);
+      });
+
+      resetDefaultsBtn.addEventListener('click', function () {
+        armConfirm(resetDefaultsBtn, 'reset', 'คืนค่าเริ่มต้นทั้งหมด', 'กดอีกครั้งเพื่อคืนค่า (คำที่แก้ไว้จะหาย)', function () {
+          draft = defaultConfig();
+          draftCatId = draft.categories[0].id;
+          showSettingsError('');
+          renderDraft();
+        });
+      });
+
+      document.getElementById('settingsBtn').addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.currentTarget.blur();
+        ensureAudio();
+        openSettings();
+      });
+
+      document.getElementById('openSettingsFromStart').addEventListener('click', function (e) {
+        e.stopPropagation();
+        openSettings();
+      });
+
+      document.getElementById('changeCatBtn').addEventListener('click', function (e) {
+        e.stopPropagation();
+        showStartScreen();
+      });
+
+      function onSharedConfigChanged() {
+        if (gameState === 'HOWTO') {
+          showStartScreen();
+        } else {
+          renderCategoryChips();
+        }
+        if (settingsModal.classList.contains('open')) updateSaveNote();
+      }
+
+      // Teacher's shared word sets (artifact database). Absent -> local only.
+      (async function initSharedConfig() {
+        try {
+          if (!window.claude || typeof window.claude.use !== 'function') return;
+          const db = await window.claude.use('db');
+          if (!db) return;
+          sharedDb = db;
+          let user = null;
+          try { user = await window.claude.use('user'); } catch (e) { user = null; }
+          if (user) {
+            try { canShare = await user.canEdit(); } catch (e) { canShare = false; }
+          } else {
+            canShare = null; // unknown: try, and fall back to local if refused
+          }
+          updateSaveNote();
+          if (gameState === 'HOWTO') updatePickCount();
+          db.doc('config/main').onSnapshot(function (snap) {
+            if (!snap.exists) return;
+            const conf = sanitizeConfig(snap.data());
+            if (!conf) return;
+            sharedConfig = conf;
+            onSharedConfigChanged();
+          }, function () {});
+        } catch (e) {
+          // Shared data optional
+        }
+      })();
+
+      // Pointer / Touch gestures on canvas (tap = release within +/- 4px, swipe >= 24px = move cursor)
+      let touchDownPos = null;
+
+      function hitTestBucket(px, py) {
+        const tol = 4;
+        for (let i = 0; i < bucketButtons.length; i++) {
+          const b = bucketButtons[i];
+          if (
+            px >= b.x - tol &&
+            px <= b.x + b.w + tol &&
+            py >= b.y - tol &&
+            py <= b.y + b.h + tol
+          ) {
+            return i;
+          }
+        }
+        return -1;
+      }
+
+      function moveCursorBy(delta) {
+        if (!bucketButtons.length) return;
+        const len = bucketButtons.length;
+        cursorIdx = (((cursorIdx + delta) % len) + len) % len;
+      }
+
+      canvas.addEventListener('pointerdown', function (e) {
+        if (performance.now() < ignoreTapUntil) return;
+        ensureAudio();
+        if (gameState !== 'PLAY') return;
+        touchDownPos = { x: e.clientX, y: e.clientY };
+      });
+
+      canvas.addEventListener('pointerup', function (e) {
+        if (performance.now() < ignoreTapUntil) {
+          touchDownPos = null;
+          return;
+        }
+        if (gameState !== 'PLAY' || !touchDownPos) return;
+
+        const dx = e.clientX - touchDownPos.x;
+        const dy = e.clientY - touchDownPos.y;
+        const dist = Math.hypot(dx, dy);
+        touchDownPos = null;
+
+        if (busy) return;
+
+        if (dist >= 24) {
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            moveCursorBy(dx > 0 ? 1 : -1);
+          } else {
+            const cols = Math.max(3, Math.min(bucketButtons.length || 3, Math.floor(W / 64)));
+            moveCursorBy(dy > 0 ? cols : -cols);
+          }
+        } else {
+          const hitIdx = hitTestBucket(e.clientX, e.clientY);
+          if (hitIdx !== -1) {
+            selectBucketIndex(hitIdx);
+          }
+        }
+      });
+
+      window.addEventListener('keydown', function (e) {
+        if (e.repeat) return;
+        if (gameState !== 'PLAY') return;
+
+        const cols = Math.max(3, Math.min(bucketButtons.length || 3, Math.floor(W / 64)));
+
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          moveCursorBy(1);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          moveCursorBy(-1);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          moveCursorBy(cols);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          moveCursorBy(-cols);
+        } else if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          if (!busy) {
+            selectBucketIndex(cursorIdx);
+          }
+        } else if (/^[a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const letter = e.key.toUpperCase();
+          for (let i = 0; i < bucketButtons.length; i++) {
+            if (bucketButtons[i].letter === letter) {
+              e.preventDefault();
+              if (!busy) selectBucketIndex(i);
+              break;
+            }
+          }
+        }
+      });
+
+      window.addEventListener('resize', function () {
+        recomputeLayout();
+      });
+
+      // ==========================================
+      // 8. CANVAS DRAWING HELPERS (NO ctx.roundRect)
+      // ==========================================
+      function roundRectPath(c, x, y, w, h, r) {
+        const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+        c.beginPath();
+        c.moveTo(x + radius, y);
+        c.lineTo(x + w - radius, y);
+        c.arcTo(x + w, y, x + w, y + radius, radius);
+        c.lineTo(x + w, y + h - radius);
+        c.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+        c.lineTo(x + radius, y + h);
+        c.arcTo(x, y + h, x, y + h - radius, radius);
+        c.lineTo(x, y + radius);
+        c.arcTo(x, y, x + radius, y, radius);
+        c.closePath();
+      }
+
+      function setMaliFont(pxSize) {
+        const size = Math.max(10, Math.round(pxSize));
+        ctx.font = 'bold ' + size + "px Mali,'Noto Sans Thai Looped',sans-serif";
+        return size;
+      }
+
+      function drawFittedLabel(text, cx, cy, maxW, idealSize, color, minHeightFactor) {
+        const minFactor = minHeightFactor || 1.6;
+        let size = idealSize;
+        setMaliFont(size);
+        const measured = ctx.measureText(text).width;
+        if (measured > maxW && measured > 0) {
+          const scaled = Math.floor(size * (maxW / measured));
+          size = Math.max(Math.floor(idealSize * 0.6), scaled);
+          setMaliFont(size);
+        }
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // Ensure box height >= minFactor * size
+        const boxH = Math.max(size * minFactor, size * 1.6);
+        ctx.fillText(text, cx, cy + (boxH - size) * 0.04);
+      }
+
+      function drawBackgroundAndClouds(dt) {
+        // Base pastel sky
+        ctx.fillStyle = '#EAFAFF';
+        ctx.fillRect(0, 0, W, H);
+
+        // Top 55% band straight edge
+        ctx.fillStyle = '#D6F2FF';
+        ctx.fillRect(0, 0, W, H * 0.55);
+
+        // Sun at top-right (x 85%, y 12%, radius 9% of min dimension)
+        const sunX = W * 0.85;
+        const sunY = H * 0.12;
+        const sunR = Math.min(W, H) * 0.09;
+        ctx.fillStyle = '#FFD23F';
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Clouds drifting right at different speeds and wrapping
+        for (let i = 0; i < clouds.length; i++) {
+          const cl = clouds[i];
+          if (gameState !== 'PAUSED') {
+            cl.xRatio += (cl.speed * dt) / W;
+            if (cl.xRatio > 1.18) {
+              cl.xRatio = -0.18;
+            }
+          }
+          const cx = cl.xRatio * W;
+          const cy = cl.yRatio * H;
+          const rBase = Math.max(14, Math.min(W, H) * 0.036) * cl.scale;
+
+          ctx.save();
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = '#FFFFFF';
+          if (cl.puffs === 5) {
+            const offsets = [-1.5, -0.75, 0, 0.75, 1.5];
+            const radii = [0.75, 1.0, 1.2, 1.0, 0.75];
+            for (let p = 0; p < offsets.length; p++) {
+              ctx.beginPath();
+              ctx.ellipse(
+                cx + offsets[p] * rBase,
+                cy - radii[p] * rBase * 0.25,
+                rBase * radii[p],
+                rBase * radii[p] * 0.72,
+                0,
+                0,
+                Math.PI * 2
+              );
+              ctx.fill();
+            }
+          } else {
+            const offsets = [-0.95, 0, 0.95];
+            const radii = [0.82, 1.15, 0.85];
+            for (let p = 0; p < offsets.length; p++) {
+              ctx.beginPath();
+              ctx.ellipse(
+                cx + offsets[p] * rBase,
+                cy - radii[p] * rBase * 0.2,
+                rBase * radii[p],
+                rBase * radii[p] * 0.72,
+                0,
+                0,
+                Math.PI * 2
+              );
+              ctx.fill();
+            }
+          }
+          ctx.restore();
+        }
+
+        // Two grass ellipses near bottom
+        ctx.fillStyle = '#A7D98C';
+        ctx.beginPath();
+        ctx.ellipse(W * 0.25, H + H * 0.02, W * 0.62, H * 0.12, -0.04, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#BFE6A6';
+        ctx.beginPath();
+        ctx.ellipse(W * 0.78, H + H * 0.025, W * 0.65, H * 0.11, 0.04, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawBalloonAndJumbo() {
+        const R = layout.balloonR;
+        const bob = Math.sin(balloonBobTime * 2.4) * 5;
+        const cx = layout.balloonCx;
+        const cy = layout.balloonCy + bob + balloonFlyY + balloonDropOffset + balloonEntranceY;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(balloonScale, balloonScale);
+
+        // 1. Balloon envelope circle (#FFF8ED)
+        ctx.fillStyle = '#FFF8ED';
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5 vertical stripes clipped inside circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.clip();
+
+        const numStripes = BALLOON_STRIPES.length;
+        const totalBandW = R * 1.45;
+        const stripeW = totalBandW / numStripes;
+        for (let i = 0; i < numStripes; i++) {
+          const sx = -totalBandW / 2 + i * stripeW;
+          ctx.fillStyle = BALLOON_STRIPES[i];
+          ctx.fillRect(sx, -R * 1.1, stripeW, R * 2.2);
+        }
+
+        // White translucent border 0.55 alpha, 6px
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Top-left white oval highlight 0.4 alpha
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(-R * 0.36, -R * 0.36, R * 0.24, R * 0.13, -0.65, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 2. Neck (#FFE0A3)
+        const neckW = R * 0.34;
+        const neckH = R * 0.18;
+        const neckY = R * 0.96;
+        ctx.fillStyle = '#FFE0A3';
+        roundRectPath(ctx, -neckW / 2, neckY, neckW, neckH, neckH * 0.35);
+        ctx.fill();
+
+        // 3. Basket (#9A6A3A) with top rim (#7C5228) & 4 straight ropes (#CAA86A)
+        const basketW = R * 0.66;
+        const basketH = R * 0.46;
+        const basketTopY = R * 1.56;
+        const ropeBottomY = basketTopY;
+        const ropeTopY = neckY + neckH;
+
+        ctx.strokeStyle = '#CAA86A';
+        ctx.lineWidth = Math.max(2, R * 0.04);
+        const ropeTopOffsets = [-neckW * 0.42, -neckW * 0.15, neckW * 0.15, neckW * 0.42];
+        const ropeBotOffsets = [-basketW * 0.44, -basketW * 0.16, basketW * 0.16, basketW * 0.44];
+        for (let r = 0; r < 4; r++) {
+          ctx.beginPath();
+          ctx.moveTo(ropeTopOffsets[r], ropeTopY);
+          ctx.lineTo(ropeBotOffsets[r], ropeBottomY);
+          ctx.stroke();
+        }
+
+        // Trapezoid basket
+        ctx.fillStyle = '#9A6A3A';
+        ctx.beginPath();
+        ctx.moveTo(-basketW * 0.5, basketTopY);
+        ctx.lineTo(basketW * 0.5, basketTopY);
+        ctx.lineTo(basketW * 0.42, basketTopY + basketH);
+        ctx.lineTo(-basketW * 0.42, basketTopY + basketH);
+        ctx.closePath();
+        ctx.fill();
+
+        // Top rim
+        ctx.fillStyle = '#7C5228';
+        roundRectPath(ctx, -basketW * 0.54, basketTopY - R * 0.04, basketW * 1.08, R * 0.11, R * 0.04);
+        ctx.fill();
+
+        // 4. Jumbo little elephant in basket (0.72R)
+        const jumboSize = Math.max(18, Math.round(R * 0.72));
+        ctx.save();
+        ctx.font = jumboSize + "px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐘', 0, basketTopY + basketH * 0.24);
+        ctx.restore();
+
+        ctx.restore();
+      }
+
+      function drawSlots() {
+        if (!currentItem) return;
+        const units = currentItem.units;
+        const n = units.length;
+        const size = layout.slotSize;
+
+        for (let i = 0; i < n; i++) {
+          const rect = layout.slotRects && layout.slotRects[i];
+          if (!rect) continue;
+          const cx = rect.x + size / 2;
+          const cy = rect.y + size / 2;
+          const sc = slotScales[i] || 1;
+          const isFilled = Boolean(revealedSlots[i]);
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(sc, sc);
+
+          // Short rope stub below slot (#CAA86A), bottom row only
+          if (rect.lastRow) {
+            ctx.strokeStyle = '#CAA86A';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, size / 2);
+            ctx.lineTo(0, size / 2 + Math.max(8, size * 0.2));
+            ctx.stroke();
+          }
+
+          // Slot box: white translucent 0.9, radius 20%, border 4px #CBBFA6
+          ctx.fillStyle = isFilled ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)';
+          roundRectPath(ctx, -size / 2, -size / 2, size, size, size * 0.2);
+          ctx.fill();
+
+          ctx.strokeStyle = isFilled ? '#2EC4B6' : '#CBBFA6';
+          ctx.lineWidth = size < 34 ? 3 : 4;
+          ctx.stroke();
+
+          // Uppercase letter #4A3A28, height 62% of slot
+          if (isFilled) {
+            const letterSize = Math.max(14, Math.round(size * 0.62));
+            drawFittedLabel(units[i], 0, 1, size * 0.82, letterSize, '#4A3A28', 1.6);
+          }
+
+          ctx.restore();
+        }
+      }
+
+      function drawBucket() {
+        for (let i = 0; i < bucketButtons.length; i++) {
+          const b = bucketButtons[i];
+          const shakeX = b.shakeTimer > 0 ? Math.sin(b.shakeTimer * 55) * 6 : 0;
+          const bounceScale = b.bounceTimer > 0 ? 1 + Math.sin((b.bounceTimer / 0.35) * Math.PI) * 0.14 : 1;
+
+          const cx = b.x + b.w / 2 + shakeX;
+          const cy = b.y + b.h / 2;
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(bounceScale, bounceScale);
+
+          const hw = b.w / 2;
+          const hh = b.h / 2;
+          const rad = b.w * 0.22;
+
+          // Purple cursor ring (#7C5CFC, 5px thick, 6px gap)
+          if (i === cursorIdx && gameState === 'PLAY') {
+            ctx.strokeStyle = '#7C5CFC';
+            ctx.lineWidth = 5;
+            roundRectPath(ctx, -hw - 6, -hh - 6, b.w + 12, b.h + 12, rad + 6);
+            ctx.stroke();
+          }
+
+          let fillColor = '#FFF8ED';
+          let borderColor = '#FFC36B';
+          let textColor = '#3A2A1A';
+          let alpha = 1;
+
+          if (b.status === 'correct') {
+            fillColor = '#D9F5EF';
+            borderColor = '#2EC4B6';
+            textColor = '#0E7C70';
+          } else if (b.status === 'wrong') {
+            fillColor = '#E9E2D4';
+            borderColor = '#CFC6B4';
+            textColor = '#A89F8D';
+            alpha = 0.55;
+          }
+
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = fillColor;
+          roundRectPath(ctx, -hw, -hh, b.w, b.h, rad);
+          ctx.fill();
+
+          // Top white translucent highlight strip on normal buttons
+          if (b.status === 'normal') {
+            ctx.save();
+            roundRectPath(ctx, -hw, -hh, b.w, b.h, rad);
+            ctx.clip();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillRect(-hw, -hh, b.w, b.h * 0.26);
+            ctx.restore();
+          }
+
+          ctx.strokeStyle = borderColor;
+          ctx.lineWidth = 4;
+          roundRectPath(ctx, -hw, -hh, b.w, b.h, rad);
+          ctx.stroke();
+
+          const fontPx = Math.max(14, Math.min(42, Math.round(b.h * 0.52)));
+          drawFittedLabel(b.letter, 0, 1, b.w * 0.78, fontPx, textColor, 1.6);
+
+          ctx.restore();
+        }
+      }
+
+      function drawParticlesAndBanners() {
+        // Sparkles
+        for (let i = 0; i < sparkles.length; i++) {
+          const sp = sparkles[i];
+          const alpha = Math.max(0, Math.min(1, sp.life / sp.maxLife));
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = sp.color;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Confetti
+        for (let i = 0; i < confetti.length; i++) {
+          const cf = confetti[i];
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, Math.min(1, cf.life));
+          ctx.translate(cf.x, cf.y);
+          ctx.rotate(cf.rot);
+          ctx.fillStyle = cf.color;
+          ctx.fillRect(-cf.w / 2, -cf.h / 2, cf.w, cf.h);
+          ctx.restore();
+        }
+
+        // Out of air purple capsule badge: 'ลองอีกครั้งนะ! 🎈'
+        if (outOfAirBadgeTimer > 0) {
+          const bw = Math.min(W * 0.78, 280);
+          const bh = 48;
+          const bx = (W - bw) / 2;
+          const by = layout.balloonAreaTop + layout.balloonAreaHeight * 0.55;
+
+          ctx.save();
+          ctx.fillStyle = '#7C5CFC';
+          roundRectPath(ctx, bx, by, bw, bh, bh / 2);
+          ctx.fill();
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          drawFittedLabel('ลองอีกครั้งนะ! 🎈', W / 2, by + bh / 2, bw - 24, 18, '#FFFFFF', 1.6);
+          ctx.restore();
+        }
+
+        // Level complete purple banner: 'ผ่านด่าน n! 🎉'
+        if (levelBannerTimer > 0) {
+          const bw = Math.min(W * 0.82, 320);
+          const bh = 58;
+          const bx = (W - bw) / 2;
+          const by = H * 0.42;
+
+          ctx.save();
+          ctx.fillStyle = '#7C5CFC';
+          roundRectPath(ctx, bx, by, bw, bh, bh / 2);
+          ctx.fill();
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          drawFittedLabel(levelBannerText, W / 2, by + bh / 2, bw - 24, 22, '#FFFFFF', 1.6);
+          ctx.restore();
+        }
+      }
+
+      // ==========================================
+      // 9. UPDATE & RENDER LOOP
+      // ==========================================
+      function update(dt) {
+        if (gameState === 'PAUSED' || gameState === 'SETTINGS') {
+          pausedElapsedTracker += dt;
+          return;
+        }
+
+        balloonBobTime += dt;
+
+        // Smooth balloon scale with spring bounce
+        const springDiff = balloonTargetScale - balloonScale;
+        balloonBounceVel = (balloonBounceVel + springDiff * 42 * dt) * Math.exp(-9 * dt);
+        balloonScale += balloonBounceVel * dt;
+        if (balloonScale < 0.45) balloonScale = 0.45;
+
+        // Slide in next word balloon from top
+        if (balloonEntranceY < 0) {
+          balloonEntranceY = Math.min(0, balloonEntranceY + H * 1.4 * dt);
+        }
+
+        // Slot pop scales back to 1.0
+        for (let i = 0; i < slotScales.length; i++) {
+          if (slotScales[i] > 1) {
+            slotScales[i] = Math.max(1, slotScales[i] - 1.4 * dt);
+          }
+        }
+
+        // Button shake & bounce timers
+        for (let i = 0; i < bucketButtons.length; i++) {
+          const b = bucketButtons[i];
+          if (b.shakeTimer > 0) b.shakeTimer = Math.max(0, b.shakeTimer - dt);
+          if (b.bounceTimer > 0) b.bounceTimer = Math.max(0, b.bounceTimer - dt);
+        }
+
+        // Wrong toast timer
+        if (wrongToastTimer > 0) {
+          wrongToastTimer = Math.max(0, wrongToastTimer - dt);
+          if (wrongToastTimer === 0) {
+            wrongToast.classList.remove('show');
+          }
+        }
+
+        if (outOfAirBadgeTimer > 0) {
+          outOfAirBadgeTimer = Math.max(0, outOfAirBadgeTimer - dt);
+        }
+
+        if (levelBannerTimer > 0) {
+          levelBannerTimer = Math.max(0, levelBannerTimer - dt);
+        }
+
+        // Sparkles
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+          const sp = sparkles[i];
+          sp.x += sp.vx * dt;
+          sp.y += sp.vy * dt;
+          sp.vy += 190 * dt;
+          sp.life -= dt;
+          if (sp.life <= 0) sparkles.splice(i, 1);
+        }
+
+        // Confetti
+        for (let i = confetti.length - 1; i >= 0; i--) {
+          const cf = confetti[i];
+          cf.x += cf.vx * dt;
+          cf.y += cf.vy * dt;
+          cf.vy += 260 * dt;
+          cf.rot += cf.vRot * dt;
+          cf.life -= dt;
+          if (cf.life <= 0) confetti.splice(i, 1);
+        }
+      }
+
+      function render() {
+        drawBackgroundAndClouds(0);
+        drawBalloonAndJumbo();
+        drawSlots();
+        drawBucket();
+        drawParticlesAndBanners();
+      }
+
+      function loop(t) {
+        window.requestAnimationFrame(loop);
+        try {
+          if (lastFrameTime === null) {
+            lastFrameTime = t;
+          }
+          const dt = Math.max(0, Math.min(0.05, (t - lastFrameTime) / 1000));
+          lastFrameTime = t;
+
+          update(dt);
+          drawBackgroundAndClouds(dt);
+          drawBalloonAndJumbo();
+          drawSlots();
+          drawBucket();
+          drawParticlesAndBanners();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // ==========================================
+      // 10. BOOTSTRAP (HOWTO OPEN ON LOAD)
+      // ==========================================
+      createClouds();
+      showStartScreen();
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          recomputeLayout();
+          render();
+        });
+      }
+
+      window.requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
